@@ -1,0 +1,69 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user profile and social links",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "linkedin": { "type": "string" },
+        "instagram": { "type": "string" },
+        "facebook": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "stripeLink": { "type": "string" },
+        "category": { "type": "string" },
+        "isPremium": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Resume": {
+      "title": "Resume",
+      "description": "Stores generated resume content",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "published": { "type": "boolean" },
+        "stars": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "content"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "User reviews for resumes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "resumeId": { "type": "string" },
+        "reviewerId": { "type": "string" },
+        "reviewerName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["resumeId", "reviewerId", "rating"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/resumes/{resumeId}": {
+      "schema": "Resume",
+      "description": "Resume documents"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Review documents"
+    }
+  }
+}
