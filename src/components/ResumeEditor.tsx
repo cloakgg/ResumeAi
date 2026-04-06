@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'motion/react';
-import { Edit3, Eye, Check, ArrowRight, Save, Globe, Loader2 } from 'lucide-react';
+import { Edit3, Eye, Check, ArrowRight, Globe, Loader2, Download } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Resume } from '../types';
+import { Resume, UserProfile } from '../types';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
-export default function ResumeEditor({ resume, onNext, onUpdate }: { resume: Resume; onNext: () => void; onUpdate: (updated: Resume) => void }) {
+export default function ResumeEditor({ resume, onNext, onUpdate, profile }: { resume: Resume; onNext: () => void; onUpdate: (updated: Resume) => void; profile: UserProfile }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [content, setContent] = useState(resume.content);
+  const [content, setContent] = useState(() => {
+    // Auto-replace placeholders with user's name
+    return resume.content.replace(/\[Your Name\]|\[Name\]|YOUR NAME/gi, profile.displayName);
+  });
   const [isSaving, setIsSaving] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [category, setCategory] = useState(resume.category || 'General');
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -29,14 +36,38 @@ export default function ResumeEditor({ resume, onNext, onUpdate }: { resume: Res
     }
   };
 
+  const handleDownloadPDF = async () => {
+    if (!previewRef.current) return;
+    setIsDownloading(true);
+    try {
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${profile.displayName.replace(/\s+/g, '_')}_Resume.pdf`);
+    } catch (error) {
+      console.error("PDF generation error", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tight">Review Your Resume</h2>
           <p className="text-slate-500">Fine-tune the details before publishing to the marketplace.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => setIsEditing(!isEditing)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
@@ -46,6 +77,16 @@ export default function ResumeEditor({ resume, onNext, onUpdate }: { resume: Res
             {isEditing ? <Eye size={18} /> : <Edit3 size={18} />}
             {isEditing ? 'Preview' : 'Edit Content'}
           </button>
+          
+          <button
+            onClick={handleDownloadPDF}
+            disabled={isDownloading || isEditing}
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50"
+          >
+            {isDownloading ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+            Download PDF
+          </button>
+
           <button
             onClick={handleSave}
             disabled={isSaving}
@@ -85,6 +126,7 @@ export default function ResumeEditor({ resume, onNext, onUpdate }: { resume: Res
                 <option value="Marketing">Marketing</option>
                 <option value="Sales">Sales</option>
                 <option value="Management">Management</option>
+                <option value="Teen Program">Teen Program (12-17)</option>
               </select>
             </div>
             <div className="pt-4 border-t border-slate-100">
@@ -112,7 +154,10 @@ export default function ResumeEditor({ resume, onNext, onUpdate }: { resume: Res
                 placeholder="Write your resume in Markdown..."
               />
             ) : (
-              <div className="p-12 prose prose-slate max-w-none prose-headings:font-black prose-headings:tracking-tight prose-p:text-slate-600 prose-li:text-slate-600">
+              <div 
+                ref={previewRef}
+                className="p-12 prose prose-slate max-w-none prose-headings:font-black prose-headings:tracking-tight prose-p:text-slate-600 prose-li:text-slate-600 bg-white"
+              >
                 <ReactMarkdown>{content}</ReactMarkdown>
               </div>
             )}

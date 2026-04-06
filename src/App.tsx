@@ -11,7 +11,7 @@ import Marketplace from './components/Marketplace';
 import Profile from './components/Profile';
 import Paywall from './components/Paywall';
 import { motion, AnimatePresence } from 'motion/react';
-import { LogIn, LogOut, User as UserIcon, Briefcase, MessageSquare, Globe, Layout as LayoutIcon, Crown } from 'lucide-react';
+import { LogIn, LogOut, User as UserIcon, Briefcase, MessageSquare, Globe, Layout as LayoutIcon, Crown, Youtube } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -158,7 +158,7 @@ export default function App() {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-8 min-h-[calc(100vh-160px)]">
         <AnimatePresence mode="wait">
           {appState === 'landing' && (
             <motion.div
@@ -171,7 +171,7 @@ export default function App() {
             </motion.div>
           )}
 
-          {appState === 'chat' && user && (
+          {appState === 'chat' && user && profile && (
             <motion.div
               key="chat"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -179,6 +179,7 @@ export default function App() {
               exit={{ opacity: 0, scale: 0.95 }}
             >
               <AIChat 
+                profile={profile}
                 onGenerated={(resume) => {
                   setCurrentResume(resume);
                   setAppState('edit');
@@ -187,7 +188,7 @@ export default function App() {
             </motion.div>
           )}
 
-          {appState === 'edit' && currentResume && (
+          {appState === 'edit' && currentResume && profile && (
             <motion.div
               key="edit"
               initial={{ opacity: 0, x: 20 }}
@@ -196,7 +197,8 @@ export default function App() {
             >
               <ResumeEditor 
                 resume={currentResume} 
-                onNext={() => setAppState('social')}
+                profile={profile}
+                onNext={() => setAppState('marketplace')}
                 onUpdate={(updated) => setCurrentResume(updated)}
               />
             </motion.div>
@@ -240,6 +242,31 @@ export default function App() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Global Footer */}
+      <footer className="bg-white border-t border-slate-200 py-8 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+              <Briefcase size={18} />
+            </div>
+            <span className="font-bold text-slate-800">ResumeAI</span>
+          </div>
+          
+          <div className="flex items-center gap-8">
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-red-500 transition-colors flex items-center gap-2 text-sm font-bold">
+              <Youtube size={18} />
+              YouTube
+            </a>
+            <a href="#" className="text-slate-400 hover:text-blue-500 transition-colors text-sm font-bold">Privacy</a>
+            <a href="#" className="text-slate-400 hover:text-blue-500 transition-colors text-sm font-bold">Terms</a>
+          </div>
+
+          <p className="text-slate-400 text-xs font-medium">
+            © 2026 ResumeAI. Empowering careers with AI.
+          </p>
+        </div>
+      </footer>
 
       {/* Paywall Modal */}
       <AnimatePresence>

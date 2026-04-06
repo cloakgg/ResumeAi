@@ -6,7 +6,7 @@ const getAI = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-export const generateResume = async (chatHistory: { role: string; parts: { text: string }[] }[]) => {
+export const generateResume = async (chatHistory: { role: string; parts: { text: string }[] }[], userName: string) => {
   const ai = getAI();
   const model = "gemini-3-flash-preview";
   
@@ -14,7 +14,7 @@ export const generateResume = async (chatHistory: { role: string; parts: { text:
     model,
     contents: [
       ...chatHistory,
-      { role: "user", parts: [{ text: "Based on our conversation, please generate a professional resume in Markdown format. Include sections for Summary, Experience, Education, and Skills. Make it look clean and professional." }] }
+      { role: "user", parts: [{ text: `Based on our conversation, please generate a professional resume for ${userName} in Markdown format. Include sections for Summary, Experience, Education, and Skills. Make it look clean and professional. Ensure the name ${userName} is prominent at the top.` }] }
     ],
     config: {
       systemInstruction: "You are an expert resume builder. Your goal is to gather information from the user and then generate a high-quality resume. Be professional, encouraging, and concise.",

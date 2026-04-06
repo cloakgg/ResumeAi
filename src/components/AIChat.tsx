@@ -4,31 +4,31 @@ import { Send, Bot, User, Sparkles, Loader2, Wand2, CheckCircle2, ChevronRight }
 import { generateResume } from '../lib/gemini';
 import { db, auth } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { Resume } from '../types';
+import { Resume, UserProfile } from '../types';
 
 const PRESET_QUESTIONS = [
   {
     id: 'role',
     question: "What's your current or target job title?",
-    options: ['Software Engineer', 'Product Designer', 'Marketing Manager', 'Sales Representative', 'Data Analyst', 'Other']
+    options: ['Software Engineer', 'Product Designer', 'Marketing Manager', 'Sales Representative', 'Data Analyst', 'Teen Program Participant', 'Other']
   },
   {
     id: 'experience',
     question: "How many years of experience do you have?",
-    options: ['Entry Level (0-2)', 'Mid Level (3-5)', 'Senior (5-10)', 'Expert (10+)']
+    options: ['Entry Level (0-2)', 'Mid Level (3-5)', 'Senior (5-10)', 'Expert (10+)', 'Teen (12-17)']
   },
   {
     id: 'industry',
     question: "Which industry are you focusing on?",
-    options: ['Technology', 'Healthcare', 'Finance', 'Education', 'Creative Arts', 'Other']
+    options: ['Technology', 'Healthcare', 'Finance', 'Education', 'Creative Arts', 'Teen Program', 'Other']
   }
 ];
 
-export default function AIChat({ onGenerated }: { onGenerated: (resume: Resume) => void }) {
+export default function AIChat({ onGenerated, profile }: { onGenerated: (resume: Resume) => void; profile: UserProfile }) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string }[]>([
-    { role: 'model', text: "Hi! I'm your AI Resume Assistant. Let's build your perfect resume. I'll start with a few quick questions to get the basics right." }
+    { role: 'model', text: `Hi ${profile.displayName}! I'm your AI Resume Assistant. Let's build your perfect resume. I'll start with a few quick questions to get the basics right.` }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -84,7 +84,7 @@ export default function AIChat({ onGenerated }: { onGenerated: (resume: Resume) 
           { role: 'user', parts: [{ text: userMessage }] }
         ],
         config: {
-          systemInstruction: "You are a helpful AI assistant that helps users build their resumes. You have already gathered some basic info. Now, help the user refine their details. Once you have enough info, tell them you are ready to generate the resume and include the keyword 'GENERATE_NOW'.",
+          systemInstruction: `You are a helpful AI assistant that helps users build their resumes. You are currently helping ${profile.displayName}. You have already gathered some basic info. Now, help the user refine their details. Once you have enough info, tell them you are ready to generate the resume and include the keyword 'GENERATE_NOW'.`,
         }
       });
 
@@ -104,7 +104,7 @@ export default function AIChat({ onGenerated }: { onGenerated: (resume: Resume) 
     setIsGenerating(true);
     try {
       const history = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
-      const content = await generateResume(history);
+      const content = await generateResume(history, profile.displayName);
       
       const resumeData = {
         userId: auth.currentUser?.uid,
